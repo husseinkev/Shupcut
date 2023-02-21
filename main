@@ -1,0 +1,48 @@
+from flask import Flask, render_template, request, redirect, url_for
+import sqlite3
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return render_template('home.html')
+
+@app.route('/create_profile', methods=['GET', 'POST'])
+def create_profile():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        phone = request.form['phone']
+        address = request.form['address']
+        bio = request.form['bio']
+        user_type = request.form['user_type']
+        
+        conn = sqlite3.connect('barber.db')
+        c = conn.cursor()
+        c.execute('INSERT INTO profiles (name, email, phone, address, bio, user_type) VALUES (?, ?, ?, ?, ?, ?)', (name, email, phone, address, bio, user_type))
+        conn.commit()
+        conn.close()
+        
+        if user_type == 'barber':
+            return redirect(url_for('barber_profile'))
+        else:
+            return redirect(url_for('user_profile'))
+        
+    return render_template('create_profile.html')
+
+@app.route('/barber_profile')
+def barber_profile():
+    conn = sqlite3.connect('barber.db')
+    c = conn.cursor()
+    c.execute('SELECT * FROM profiles WHERE user_type = "barber"')
+    profiles = c.fetchall()
+    conn.close()
+    
+    return render_template('barber_profile.html', profiles=profiles)
+
+@app.route('/user_profile')
+def user_profile():
+    return render_template('user_profile.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
